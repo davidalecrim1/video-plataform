@@ -1,0 +1,23 @@
+services:
+  video-server:
+    build:
+      context: ./internal/video-server
+      target: dev
+    ports:
+      - "8095:8095"
+    volumes:
+      - ./internal/video-server:/app
+      - ./output:/app/output
+      - ./input:/app/input
+
+  video-client:
+    build:
+      context: ./frontend
+      target: dev
+    ports:
+      - "3010:80"
+    depends_on:
+      - video-server
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
