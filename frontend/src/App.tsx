@@ -30,7 +30,6 @@ function App() {
         : contentType?.includes('application/dash+xml')
 
       if (!isValidContent) {
-        console.log(contentType)
         throw new Error(`Invalid URL for ${videoType.toUpperCase()} video`)
       }
 
@@ -40,6 +39,12 @@ function App() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setVideoType(e.target.value as VideoType)
+    setShowPlayer(false)
+    setError(null)
   }
 
   return (
@@ -60,10 +65,7 @@ function App() {
                     name="videoType"
                     value="hls"
                     checked={videoType === 'hls'}
-                    onChange={(e) => {
-                      setVideoType(e.target.value as VideoType)
-                      setShowPlayer(false)
-                    }}
+                    onChange={handleOnChange}
                   />
                   <span className="ml-2 text-gray-300">HLS</span>
                 </label>
@@ -74,10 +76,7 @@ function App() {
                     name="videoType"
                     value="dash"
                     checked={videoType === 'dash'}
-                    onChange={(e) => {
-                      setVideoType(e.target.value as VideoType)
-                      setShowPlayer(false)
-                    }}
+                    onChange={handleOnChange}
                   />
                   <span className="ml-2 text-gray-300">MPEG-DASH</span>
                 </label>
