@@ -41,6 +41,12 @@ func videoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ext := filepath.Ext(filePath)
+
+	if ext == "" {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
 	validExtensions := map[string]bool{
 		".mp4":  true,
 		".m4s":  true,
