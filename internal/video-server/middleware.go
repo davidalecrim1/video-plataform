@@ -3,8 +3,51 @@ package main
 import (
 	"log"
 	"net/http"
+	"runtime/debug"
 	"time"
 )
+
+type Middleware func(http.HandlerFunc) http.HandlerFunc
+
+func Chain(h http.HandlerFunc, middlewares ...Middleware) http.HandlerFunc {
+	// Apply in reverse order so that the first middleware
+	// in the slice is executed first.
+	for i := len(middlewares) - 1; i >= 0; i-- {
+		h = middlewares[i](h)
+	}
+	return h
+}
+
+var allMiddlewares = []Middleware{
+	recoverMiddleware,
+	loggingMiddleware,
+	corsMiddleware,
+}
+
+func loggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		rw := newResponseWriter(w)
+		next(rw, r)
+		duration := time.Since(start)
+
+		statusColor := getStatusColor(rw.statusCode)
+		reset := "\033[0m"
+
+		// Format similar to Gin's logger
+		log.Printf("[HTTP] %s %s %s %s %d %s %s %d bytes %s",
+			r.Method,
+			statusColor,
+			r.URL.Path,
+			http.StatusText(rw.statusCode),
+			rw.statusCode,
+			reset,
+			duration,
+			rw.size,
+			r.UserAgent(),
+		)
+	})
+}
 
 type responseWriter struct {
 	http.ResponseWriter
@@ -40,32 +83,7 @@ func getStatusColor(code int) string {
 	}
 }
 
-func loggingMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-		rw := newResponseWriter(w)
-		next.ServeHTTP(rw, r)
-		duration := time.Since(start)
-
-		statusColor := getStatusColor(rw.statusCode)
-		reset := "\033[0m"
-
-		// Format similar to Gin's logger
-		log.Printf("[HTTP] %s %s %s %s %d %s %s %d bytes %s",
-			r.Method,
-			r.URL.Path,
-			statusColor,
-			http.StatusText(rw.statusCode),
-			rw.statusCode,
-			reset,
-			duration,
-			rw.size,
-			r.UserAgent(),
-		)
-	})
-}
-
-func corsMiddleware(next http.Handler) http.Handler {
+func corsMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
@@ -76,6 +94,20 @@ func corsMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		next.ServeHTTP(w, r)
+		next(w, r)
+	})
+}
+
+func recoverMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				log.Printf("caught a panic: %v, stack trace: %v", err, string(debug.Stack()))
+
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			}
+		}()
+
+		next(w, r)
 	})
 }

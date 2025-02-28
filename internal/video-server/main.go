@@ -15,19 +15,13 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.Handle("/healthz", corsMiddleware(loggingMiddleware(http.HandlerFunc(healthz))))
-	mux.Handle("/", corsMiddleware(loggingMiddleware(http.HandlerFunc(hello))))
-
-	videoHandler := http.HandlerFunc(videoHandler)
-
-	mux.Handle("/video/", corsMiddleware(
-		loggingMiddleware(
-			http.StripPrefix("/video/", videoHandler),
-		),
-	))
+	mux.HandleFunc("GET /healthz", healthz)
+	mux.Handle("GET /video/", http.StripPrefix("/video/", http.HandlerFunc(videoHandler)))
 
 	log.Printf("server starting on port %s", port)
-	err := http.ListenAndServe(":"+port, mux)
+
+	wrappedMux := Chain(mux.ServeHTTP, allMiddlewares...)
+	err := http.ListenAndServe(":"+port, wrappedMux)
 	if err != nil {
 		log.Fatal("failed to start server: ", err)
 	}
@@ -78,9 +72,5 @@ func videoHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func healthz(w http.ResponseWriter, _ *http.Request) {
-	w.Write([]byte("OK"))
-}
-
-func hello(w http.ResponseWriter, _ *http.Request) {
 	w.Write([]byte("OK"))
 }
