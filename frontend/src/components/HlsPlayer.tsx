@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import Hls from 'hls.js'
+import React from 'react'
 
 interface Props {
     src: string
@@ -31,11 +32,14 @@ export function HlsPlayer({ src }: Props) {
     }, [src])
 
     return (
-        <div className="aspect-w-16 aspect-h-9">
+        <div
+            data-testid="hls-player"
+            className="aspect-w-16 aspect-h-9">
             <video
                 ref={videoRef}
                 controls
                 className="w-full h-full object-contain"
+                data-testid="video-element"
             />
         </div>
     )

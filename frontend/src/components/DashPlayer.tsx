@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
-import * as dashjs from 'dashjs'
+import React from 'react'
+import dashjs from 'dashjs'
 
 interface Props {
     src: string
@@ -24,11 +25,14 @@ export function DashPlayer({ src }: Props) {
     }, [src])
 
     return (
-        <div className="aspect-w-16 aspect-h-9">
+        <div
+            data-testid="dash-player"
+            className="aspect-w-16 aspect-h-9">
             <video
                 ref={videoRef}
                 controls
                 className="w-full h-full object-contain"
+                data-testid="video-element"
             />
         </div>
     )

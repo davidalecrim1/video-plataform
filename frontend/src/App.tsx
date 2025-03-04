@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import HlsPlayer from './components/HlsPlayer'
 import DashPlayer from './components/DashPlayer'
+import React from 'react'
 
 type VideoType = 'hls' | 'dash'
 
@@ -129,9 +130,11 @@ function App() {
             </h2>
             <div className="aspect-w-16 aspect-h-9">
               {videoType === 'hls' ? (
-                <HlsPlayer src={url} />
+                <HlsPlayer
+                  src={url} />
               ) : (
-                <DashPlayer src={url} />
+                <DashPlayer
+                  src={url} />
               )}
             </div>
           </div>
